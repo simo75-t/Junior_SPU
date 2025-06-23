@@ -132,7 +132,7 @@ class _IncomeExpensePageState extends State<IncomeExpensePage>
     }
   }
 
-  void _submitIncome() {
+  void _submitIncome() async {
     if (_incomeFormKey.currentState?.validate() ?? false) {
       double amount = double.tryParse(_incomeAmountController.text) ?? 0;
       String date = DateFormat('yyyy-MM-dd').format(_incomeSelectedDate);
@@ -140,18 +140,26 @@ class _IncomeExpensePageState extends State<IncomeExpensePage>
       String description = _incomeDescriptionController.text;
       if (categoryId == null) return;
 
-      ExpenseIncomeController.createTransaction({
+      bool success = await ExpenseIncomeController.createTransaction({
         'amount': amount,
         'date': date,
         'category': categoryId,
         'description': description,
-        'type': 'income',
+        'transaction_type': 'income', // lowercase! (see below)
         'is_recurring': false,
       });
+
+      // Use ScaffoldMessenger to show a SnackBar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+              success ? 'Income added successfully!' : 'Failed to add income.'),
+        ),
+      );
     }
   }
 
-  void _submitExpense() {
+  void _submitExpense() async {
     if (_expenseFormKey.currentState?.validate() ?? false) {
       double amount = double.tryParse(_expenseAmountController.text) ?? 0;
       String date = DateFormat('yyyy-MM-dd').format(_expenseSelectedDate);
@@ -160,14 +168,22 @@ class _IncomeExpensePageState extends State<IncomeExpensePage>
       bool recurrence = _expenseRecurrence;
       if (categoryId == null) return;
 
-      ExpenseIncomeController.createTransaction({
+      bool success = await ExpenseIncomeController.createTransaction({
         'amount': amount,
         'date': date,
         'category': categoryId,
         'description': description,
-        'type': 'expense',
+        'transaction_type': 'expense', // lowercase!
         'is_recurring': recurrence,
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(success
+              ? 'Expense added successfully!'
+              : 'Failed to add expense.'),
+        ),
+      );
     }
   }
 

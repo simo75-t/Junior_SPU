@@ -142,6 +142,7 @@ class ExpenseIncomeController {
       },
       body: jsonEncode(data),
     );
+    print("Create Response ${response.body} - ${response.statusCode}");
     return response.statusCode == 201;
   }
 

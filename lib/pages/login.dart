@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:jounior/controllers/usercontroller.dart';
+import 'package:jounior/pages/adminPage.dart';
 import 'package:jounior/pages/homepage.dart';
 import 'createacc.dart'; // استيراد صفحة "Create Account"
 
@@ -34,7 +35,6 @@ class _LoginPageState extends State<LoginPage> {
               key: _formKey,
               child: Column(
                 children: <Widget>[
-                  // حقل إدخال اسم المستخدم
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(25.0),
@@ -54,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // حقل إدخال كلمة المرور
+
                   Container(
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(25.0),
@@ -75,23 +75,23 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   const SizedBox(height: 30),
-                  // زر تسجيل الدخول
+
                   ElevatedButton(
-                    // onPressed: () async {
-                    //   if (_formKey.currentState?.validate() ?? false) {
-                    //     await UserController.login(
-                    //         _usernameController.text.trim(),
-                    //         _passwordController.text.trim(),
-                    //         context);
-                    //   }
-                    // },
                     onPressed: () async {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const Homepage()),
-                      );
+                      if (_formKey.currentState?.validate() ?? false) {
+                        await UserController.login(
+                            _usernameController.text.trim(),
+                            _passwordController.text.trim(),
+                            context);
+                      }
                     },
+                    // onPressed: () async {
+                    //   Navigator.pushReplacement(
+                    //     context,
+                    //     MaterialPageRoute(
+                    //         builder: (context) => const Homepage()),
+                    //   );
+                    // },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color.fromARGB(255, 37, 116, 78),
                       shape: RoundedRectangleBorder(
@@ -104,25 +104,6 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(fontSize: 16, color: Colors.white)),
                   ),
                   const SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: () async {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const Homepage()),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color.fromARGB(255, 37, 116, 78),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 16.0, horizontal: 50.0),
-                    ),
-                    child: const Text('Skip Login for test',
-                        style: TextStyle(fontSize: 16, color: Colors.white)),
-                  ),
 
                   const SizedBox(height: 20),
                   // رسالة "Don't have an account?" مع زر "Create Account"

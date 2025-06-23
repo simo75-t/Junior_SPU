@@ -7,6 +7,7 @@ import 'package:jounior/controllers/AppController.dart';
 import 'package:jounior/pages/homepage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/models/usermodel.dart';
+import 'package:jounior/pages/login.dart';
 
 class UserController {
   static User? _user;
@@ -18,7 +19,7 @@ class UserController {
     print("Start");
     final prefs = await SharedPreferences.getInstance();
 
-    final url = Uri.parse('${AppController.baseUrl}/api/accounts/login_user/');
+    final url = Uri.parse('${AppController.baseUrl}/api/accounts/login/');
     try {
       final response = await http.post(
         url,
@@ -30,7 +31,63 @@ class UserController {
           'password': password,
         }),
       );
-      if (response.statusCode == 201) {
+      print("Login Response ${response.body}");
+      print("Login Response ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String accessToken = data['access'];
+        await prefs.setString('access_token', accessToken);
+        print("Body Request Create $data");
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Homepage()),
+        );
+        return true; // success!
+      } else {
+        String errorMsg = "Login failed. Please check your credentials.";
+        if (response.body.isNotEmpty) {
+          final errorData = jsonDecode(response.body);
+          if (errorData['detail'] != null) {
+            errorMsg = errorData['detail'];
+          }
+        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  errorMsg + response.body + response.statusCode.toString())),
+        );
+        return false;
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred: $e')),
+      );
+      return false;
+    }
+  }
+
+  static Future<bool> Adminlogin(
+      String email, String password, BuildContext context) async {
+    print("Start");
+    final prefs = await SharedPreferences.getInstance();
+
+    final url = Uri.parse('${AppController.baseUrl}/api/accounts/admin/login/');
+    try {
+      final response = await http.post(
+        url,
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': email,
+          'password': password,
+        }),
+      );
+      print("Login Response ${response.body}");
+      print("Login Response ${response.statusCode}");
+
+      if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         String accessToken = data['access'];
         await prefs.setString('access_token', accessToken);
@@ -299,7 +356,7 @@ class UserController {
       await prefs.remove('access_token');
       await prefs.remove('refresh_token');
       // Navigate out
-      Navigator.of(context).pushReplacementNamed('/login');
+      Navigator.of(context).pushReplacementNamed('/api/accounts/login');
       return true;
     } else {
       final errorData = jsonDecode(response.body);

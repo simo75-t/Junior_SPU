@@ -10,6 +10,7 @@ class SummaryBox extends StatelessWidget {
     required this.title,
     required this.amount,
     required this.color,
+    required int height,
   });
 
   @override
