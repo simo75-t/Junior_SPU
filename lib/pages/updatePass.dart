@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jounior/controllers/usercontroller.dart';
+import 'package:jounior/controllers/updatepasswordcontroller.dart'; // Correct the import
 import 'package:jounior/pages/homepage.dart';
 
 class UpdatePassword extends StatefulWidget {
@@ -27,16 +27,14 @@ class _UpdatePasswordState extends State<UpdatePassword> {
       );
       return;
     }
-    if (newPassword != confirmPassword) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('New passwords do not match')),
-      );
-      return;
-    }
 
     setState(() => _loading = true);
-    final result =
-        await UserController.changePassword(oldPassword, newPassword, context);
+    final result = await UpdatePasswordController.changePassword(
+      oldPassword,
+      newPassword,
+      confirmPassword,
+      context,
+    );
     setState(() => _loading = false);
 
     if (result) {

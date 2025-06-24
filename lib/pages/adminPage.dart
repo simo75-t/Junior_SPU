@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:jounior/controllers/usercontroller.dart';
+import 'package:jounior/pages/login.dart'; // Assuming this is the correct path
 
 class AdminMinimalPage extends StatefulWidget {
   const AdminMinimalPage({Key? key}) : super(key: key);
@@ -8,13 +11,21 @@ class AdminMinimalPage extends StatefulWidget {
 }
 
 class _AdminMinimalPageState extends State<AdminMinimalPage> {
-  List<Map<String, String>> users = [
-    {"username": "TASNIM", "email": "tasnim@gmail.com"},
-    {"username": "MARYAM", "email": "maryamalbatool@gmail.com"},
-    {"username": "FATIMA", "email": "fatima-zahraa@gmail.com"},
-    {"username": "RANA", "email": "rana-ASS3@gmail.com"},
-    {"username": "OMAR", "email": "omarZ999@gmail.com"},
-  ];
+  List<Map<String, dynamic>> users = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUsers();
+  }
+
+  // Fetch users when the page is loaded
+  void _loadUsers() async {
+    List<Map<String, dynamic>> fetchedUsers = await UserController.fetchUsers();
+    setState(() {
+      users = fetchedUsers;
+    });
+  }
 
   void _showAddUserDialog() {
     String? username;
@@ -50,18 +61,19 @@ class _AdminMinimalPageState extends State<AdminMinimalPage> {
           ),
           ElevatedButton(
             child: const Text('Add'),
-            onPressed: () {
+            onPressed: () async {
               if ((username?.isNotEmpty ?? false) &&
                   (email?.isNotEmpty ?? false) &&
                   (password?.isNotEmpty ?? false)) {
-                setState(() {
-                  users.add({
-                    "username": username!,
-                    "email": email!,
-                    // Don't store password in UI, just showing the field.
-                  });
-                });
-                Navigator.pop(context);
+                bool success = await UserController.addUser(
+                  username!,
+                  email!,
+                  password!,
+                );
+                if (success) {
+                  _loadUsers(); // Refresh the user list after adding
+                  Navigator.pop(context);
+                }
               }
             },
           ),
@@ -85,10 +97,16 @@ class _AdminMinimalPageState extends State<AdminMinimalPage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
             child: const Text('Delete'),
-            onPressed: () {
-              setState(() {
-                users.removeAt(index);
-              });
+            onPressed: () async {
+              bool success = await UserController.deleteUser(
+                  (users[index]['id'] is int)
+                      ? users[index]['id']
+                      : int.tryParse(users[index]['id'].toString()) ?? 0);
+              if (success) {
+                setState(() {
+                  users.removeAt(index); // Remove the deleted user
+                });
+              }
               Navigator.pop(context);
             },
           ),
@@ -99,7 +117,11 @@ class _AdminMinimalPageState extends State<AdminMinimalPage> {
 
   void _logout() {
     // Replace this with your logout logic or navigation
-    Navigator.pop(context);
+    // Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+    );
   }
 
   @override
@@ -124,7 +146,6 @@ class _AdminMinimalPageState extends State<AdminMinimalPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Use Wrap for top line so no overflow!
                   Wrap(
                     crossAxisAlignment: WrapCrossAlignment.center,
                     spacing: 12,
@@ -151,6 +172,18 @@ class _AdminMinimalPageState extends State<AdminMinimalPage> {
                         ),
                         onPressed: _showAddUserDialog,
                       ),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.refresh),
+                        label: const Text("Refresh "),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              const Color.fromARGB(255, 37, 116, 78),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        onPressed: _loadUsers,
+                      ),
                     ],
                   ),
                   const SizedBox(height: 30),
@@ -162,37 +195,54 @@ class _AdminMinimalPageState extends State<AdminMinimalPage> {
                             style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
                         )
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: users.length,
-                          separatorBuilder: (_, __) =>
-                              const Divider(height: 24),
-                          itemBuilder: (context, index) {
-                            final user = users[index];
-                            return ListTile(
-                              leading: const Icon(Icons.person,
-                                  color: Color.fromARGB(255, 37, 116, 78)),
-                              title: Text(
-                                user['username'] ?? '',
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600),
-                              ),
-                              subtitle: Text(
-                                user['email'] ?? '',
-                                style: const TextStyle(fontSize: 13),
-                              ),
-                              trailing: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                tooltip: "Delete",
-                                onPressed: () => _showDeleteUserDialog(index),
-                              ),
-                            );
-                          },
+                      : Expanded(
+                          child: ListView.separated(
+                            shrinkWrap: true,
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: users.length,
+                            separatorBuilder: (_, __) =>
+                                const Divider(height: 24),
+                            itemBuilder: (context, index) {
+                              final user = users[index];
+                              return ListTile(
+                                leading: Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    const Icon(Icons.person),
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: user['is_active'] == true
+                                            ? Colors.green
+                                            : Colors.red,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                title: Text(user['username'] ?? 'N/A'),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(user['email'] ?? 'N/A'),
+                                    Text("Join Date " +
+                                        _formatDate(
+                                            user['date_joined'] ?? 'N/A')),
+                                  ],
+                                ),
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.red),
+                                  tooltip: "Delete",
+                                  onPressed: () => _showDeleteUserDialog(index),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                   const SizedBox(height: 30),
-                  // Logout Button at the bottom right
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
@@ -217,5 +267,19 @@ class _AdminMinimalPageState extends State<AdminMinimalPage> {
         ),
       ),
     );
+  }
+}
+
+String _formatDate(String? date) {
+  if (date == null) return 'N/A';
+  try {
+    // Parsing the date string into DateTime
+    DateTime parsedDate = DateTime.parse(date);
+    // Formatting the DateTime into a human-readable format
+    return DateFormat('yyyy-MMM-dd')
+        .format(parsedDate); // You can change the format here
+  } catch (e) {
+    print('Error parsing date: $e');
+    return 'Invalid date'; // Return a fallback string in case of error
   }
 }

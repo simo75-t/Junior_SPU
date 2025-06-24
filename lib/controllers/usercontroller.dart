@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:jounior/controllers/AppController.dart';
+import 'package:jounior/pages/adminPage.dart';
 import 'package:jounior/pages/homepage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '/models/usermodel.dart';
@@ -94,7 +95,7 @@ class UserController {
         print("Body Request Create $data");
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Homepage()),
+          MaterialPageRoute(builder: (context) => AdminMinimalPage()),
         );
         return true; // success!
       } else {
@@ -116,6 +117,87 @@ class UserController {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('An error occurred: $e')),
       );
+      return false;
+    }
+  }
+
+  // Fetch Users List
+  static Future<List<Map<String, dynamic>>> fetchUsers() async {
+    final url = Uri.parse('${AppController.baseUrl}/api/accounts/admin/users/');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      print("Fetching Response ${response.body} - ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        // Decode the response and return the full data as a list
+        List<dynamic> data = jsonDecode(response.body);
+        // Return the full response as a List of Maps (where each Map is a user object)
+        return List<Map<String, dynamic>>.from(data.map((user) {
+          return user; // Returning the entire user object
+        }));
+      } else {
+        return [];
+      }
+    } catch (e) {
+      print("Error: $e");
+      return [];
+    }
+  }
+
+  // Add New User
+  static Future<bool> addUser(
+      String username, String email, String password) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final url =
+        Uri.parse('${AppController.baseUrl}/api/accounts/admin/users/create/');
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'username': username,
+          'email': email,
+          'password': password,
+        }),
+      );
+
+      return response.statusCode == 201;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Delete User
+  static Future<bool> deleteUser(int userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('access_token');
+    final url = Uri.parse(
+        '${AppController.baseUrl}/api/accounts/admin/users/$userId/delete/');
+    try {
+      final response = await http.delete(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      return response.statusCode == 204;
+    } catch (e) {
       return false;
     }
   }
